@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>High DPI Canvas Example</title>
+  <style>
+    /* Basic reset */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+
+      overscroll-behavior: none;
+    }
+
+    /* Flexbox container */
+    .container {
+      display: flex;
+      height: 100vh; /* Full height of the viewport */
+    }
+
+    /* Left sidebar */
+    #sidebar {
+      width: 250px; /* Fixed width for the sidebar */
+      background-color: #34495e; /* Sidebar background color */
+      color: white;
+      padding: 20px;
+      box-sizing: border-box;
+      display: none;
+    }
+
+    /* Main content area (takes up the remaining space) */
+    .mainView {
+      flex: 1;
+    }
+
+    /* Optional: Styling for content inside the sidebar and content area */
+    #sidebar h1 {
+      margin: 0;
+      font-size: 2em;
+    }
+
+    /* Canvas styling */
+    canvas {
+      width: 100%; /* Make the canvas fill the container width */
+      height: 100%; /* Make the canvas fill the container height */
+      display: block; /* Remove extra space below the canvas */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="mainView">
+      <canvas id="myCanvas"></canvas>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <h1>Tools</h1>
+    </div>
+  </div>
+
+  <h2 id="cannotInitBanner" style="display: none">Cannot initialise<h2>
+
+  <script src="./built/index.js"></script>
+</body>
+</html>
