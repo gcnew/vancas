@@ -1,2 +1,3 @@
-built
+built/*
+!built/define.js
 testbed.html
