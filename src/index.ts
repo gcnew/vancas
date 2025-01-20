@@ -26,11 +26,6 @@ let mouseY: number;
 let clickX: number | undefined;
 let clickY: number | undefined;
 
-// #A3C4FC
-// #B7D8F4
-// #D0E7FF
-// #B0E0E6
-// #C0D9E1
 
 function setup() {
     canvas = document.getElementById('myCanvas')! as HTMLCanvasElement;
@@ -80,7 +75,8 @@ function setup() {
         clickY = e.offsetY;
     });
 
-    canvas.addEventListener('mouseup', e => {
+    // listen on the window for mouse-up, otherwise the event is not received if clicked outside of the window or canvas
+    window.addEventListener('mouseup', e => {
         clickX = undefined;
         clickY = undefined;
     });
@@ -122,7 +118,7 @@ function keyupListener(e: KeyboardEvent) {
 }
 
 function toggleEditor() {
-    document.getElementById('sidebar')!.style.display = editorMode ? 'inherit' : 'none';
+    document.getElementById('sidebar')!.style.display = editorMode ? 'initial' : 'none';
     resize();
 }
 
@@ -142,7 +138,8 @@ function drawDebug() {
 
     ctx.fillText(`zoom:${gridSize}`, width - 130, 30);
     ctx.fillText(`x:${mouseX} y:${mouseY}`, width - 130, 40);
-    ctx.fillText(`x:${clickX} y:${clickY}`, width - 130, 50);
+
+    clickX && ctx.fillText(`x:${clickX} y:${clickY}`, width - 130, 50);
 
     // const dims = ctx.measureText(msg);
     // ctx.fillText(msg, width - 10 - dims.width, height - dims.fontBoundingBoxAscent);
@@ -201,18 +198,6 @@ function drawEditor() {
         ctx.moveTo(0, y);
         ctx.lineTo(width, y);
         ctx.stroke();
-    }
-
-    const colours = [ '#000080', '#4682B4', '#483D8B', '#7A9BF1', '#5A6D8E', '#3F75B8', '#4B8BBE', '#6A8BCD', '#7A9CDE' ];
-    for (let i = 0; i < colours.length; ++i) {
-        ctx.fillStyle = 'darkred';
-        ctx.font = '10px Arial';
-        ctx.fillText(colours[i], 50, 20 + i * 75);
-
-        ctx.beginPath();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = colours[i];
-        ctx.strokeRect(50, 25 + i * 75, 200, 50);
     }
 
     if (clickX !== undefined) {
