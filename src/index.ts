@@ -1,5 +1,7 @@
 
-import { KeyMap } from './keyboard'
+import { KeyMap, parseShortcuts } from './keyboard'
+
+import { clamp, isTruthy } from './util'
 
 let canvas: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D;
@@ -109,34 +111,6 @@ function toggleRun() {
 
 function resetZoom() {
     gridSize = WorldZoom;
-}
-
-type Falsy = false | 0 | '' | null | undefined;
-
-// this is a type predicate - if x is `truthy`, then it's T
-const isTruthy = <T>(x: T | Falsy): x is T => !!x;
-
-function parseShortcuts(m: Map<() => void, string>): Map<string, () => void> {
-    const prio = [ 'META', 'CTRL', 'ALT', 'SHIFT' ];
-
-    const entries = [... m.entries()].map(([handler, shortcut]) => {
-        const fixed = shortcut
-            .toUpperCase()
-            .split(/\s*\+\s*/g)
-            .sort(x => {
-                const idx = prio.indexOf(x);
-                return idx !== -1 ? idx : x.charCodeAt(0);
-            })
-            .join('+');
-
-        return [fixed, handler] as const;
-    });
-
-    return new Map(entries);
-}
-
-function clamp(x: number, min: number, max: number) {
-    return Math.max(min, Math.min(x, max));
 }
 
 function resize() {
