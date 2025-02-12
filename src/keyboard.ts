@@ -86,21 +86,17 @@ export const KeyMap = {
     Slash:        '/',
 } as const;
 
-export function parseShortcuts(m: Map<() => void, string>): Map<string, () => void> {
+export type Shortcut = [() => void, string]
+
+export function normaliseShortcut(sc: string) {
     const prio = [ 'META', 'CTRL', 'ALT', 'SHIFT' ];
 
-    const entries = [... m.entries()].map(([handler, shortcut]) => {
-        const fixed = shortcut
-            .toUpperCase()
-            .split(/\s*\+\s*/g)
-            .sort(x => {
-                const idx = prio.indexOf(x);
-                return idx !== -1 ? idx : x.charCodeAt(0);
-            })
-            .join('+');
-
-        return [fixed, handler] as const;
-    });
-
-    return new Map(entries);
+    return sc
+        .toUpperCase()
+        .split(/\s*\+\s*/g)
+        .sort(x => {
+            const idx = prio.indexOf(x);
+            return idx !== -1 ? idx : x.charCodeAt(0);
+        })
+        .join('+');
 }
