@@ -38,13 +38,18 @@ export const isMac = /Mac/.test(navigator.platform);
 
 let KbShortcuts: Map<string, () => void> = new Map();
 
+export type VEvent = { kind: 'mouseup',   clickX: number, clickY: number }
+                   | { kind: 'mousedown', clickX: number, clickY: number }
+
+const eventRegistry: { [evt: string]: ((e: VEvent) => void)[] } = {};
+
 export function setup() {
     canvas = document.getElementById('myCanvas')! as HTMLCanvasElement;
 
     ctx = canvas.getContext('2d')!;
     if (ctx === null) {
         // Cannot initialise the context, show the banner message and exit
-        document.getElementById('cannotInitBanner')!.style.display = 'initial';
+        document.getElementById('cannotInitBanner')!.style.display = null!;
         return;
     }
 
@@ -74,18 +79,22 @@ export function setup() {
         KbShortcuts.get(sigil)?.();
     });
 
-    canvas.addEventListener('mousemove', e => {
-        mouseX = e.pageX;
-        mouseY = e.pageY;
+    window.addEventListener('mousemove', e => {
+        mouseX = clamp(e.pageX, 0, width);
+        mouseY = clamp(e.pageY, 0, height);
     });
 
     canvas.addEventListener('mousedown', e => {
         clickX = e.offsetX;
         clickY = e.offsetY;
+
+        raise({ kind: 'mousedown', clickX: clickX!, clickY: clickY! });
     });
 
     // listen on the window for mouse-up, otherwise the event is not received if clicked outside of the window or canvas
     window.addEventListener('mouseup', e => {
+        raise({ kind: 'mouseup', clickX: clickX!, clickY: clickY! });
+
         clickX = undefined;
         clickY = undefined;
     });
@@ -122,7 +131,25 @@ export function toggleRun() {
     !gameStop && window.requestAnimationFrame(draw);
 }
 
+export function listen(e: VEvent['kind'], f: (evt: VEvent) => void) {
+    eventRegistry[e] = eventRegistry[e] || [];
+    eventRegistry[e].push(f);
+}
+
+export function unlisten(e: VEvent['kind'], f: (evt: VEvent) => void) {
+    eventRegistry[e] = (eventRegistry[e] || []).filter(x => x !== f);
+}
+
+export function raise(e: VEvent) {
+    eventRegistry[e.kind]?.forEach(fn => fn(e));
+}
+
 function resize() {
+    // if setup fails, etc
+    if (!canvas) {
+        return;
+    }
+
     width = canvas.clientWidth;
     height = canvas.clientHeight;
 

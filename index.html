@@ -12,6 +12,7 @@
       height: 100%;
 
       overscroll-behavior: none;
+      user-select: none;
     }
 
     /* Flexbox container */
@@ -48,33 +49,18 @@
       display: block; /* Remove extra space below the canvas */
     }
 
-    /* General styling for the list */
-    .icon-list {
-      list-style-type: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    /* Styling for each list item */
-    .list-item {
+    .simple-tools {
       display: flex;
-      align-items: center; /* Vertically align icon and text */
-      margin-bottom: 10px; /* Space between items */
+      justify-content: left; /* Aligns the icons horizontally in the center */
+      gap: 5px;             /* Space between icons */
     }
 
-    /* Styling for the icon */
-    .icon {
+    .simple-icon {
       width: 24px; /* Set width for the icon */
       height: 24px; /* Set height for the icon */
-      margin-right: 10px; /* Space between icon and text */
       background-color: #F8F8FF;
       border-radius: 2px;
-    }
-
-    /* Styling for the label (text) */
-    .label {
-      font-size: 16px; /* Text size */
-      color: #F8F8FF; /* Text color */
+      cursor: pointer;
     }
   </style>
 </head>
@@ -88,24 +74,18 @@
     <div id="sidebar">
       <h1>Tools</h1>
       <hr/>
-      <ul class="icon-list">
-        <li class="list-item">
-          <img src="img/line.png" alt="Icon 1" class="icon">
-          <span class="label">Item 1</span>
-        </li>
-        <li class="list-item">
-          <img src="img/line.png" alt="Icon 2" class="icon">
-          <span class="label">Item 2</span>
-        </li>
-        <li class="list-item">
-          <img src="img/line.png" alt="Icon 3" class="icon">
-          <span class="label">Item 3</span>
-        </li>
-      </ul>
+
+      <div class="simple-tools">
+        <img class="simple-icon" src="img/line.png" data="line">
+        <img class="simple-icon" src="img/pointer.png" data="pointer">
+        <img class="simple-icon" src="img/grab.png" data="grab">
+      </div>
     </div>
   </div>
 
-  <h2 id="cannotInitBanner" style="display: none">Cannot initialise<h2>
+  <h2 id="cannotInitBanner" style="text-align: center; margin-top: -90vh; display: none">
+    Cannot initialise canvas
+  <h2>
 
   <script src="./built/define.js"></script>
   <script src="./built/index.js"></script>
