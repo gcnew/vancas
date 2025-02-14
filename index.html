@@ -28,7 +28,9 @@
       color: white;
       padding: 20px;
       box-sizing: border-box;
-      display: none;
+
+      display: flex;
+      flex-direction: column;
     }
 
     /* Main content area (takes up the remaining space) */
@@ -52,7 +54,8 @@
     .simple-tools {
       display: flex;
       justify-content: left; /* Aligns the icons horizontally in the center */
-      gap: 5px;             /* Space between icons */
+      gap: 5px;              /* Space between icons */
+      flex: 1;
     }
 
     .simple-icon {
@@ -71,14 +74,24 @@
     </div>
 
     <!-- Sidebar -->
-    <div id="sidebar">
-      <h1>Tools</h1>
-      <hr/>
+    <div id="sidebar" style="display: none">
+      <div>
+        <h1>Tools</h1>
+        <hr/>
+      </div>
 
       <div class="simple-tools">
         <img class="simple-icon" src="img/line.png" data="line">
         <img class="simple-icon" src="img/pointer.png" data="pointer">
         <img class="simple-icon" src="img/grab.png" data="grab">
+      </div>
+
+      <div>
+        <hr/>
+        <div>
+          <input type="checkbox" id="snapToGrid" name="snapToGrid" checked />
+          <label for="snapToGrid">Snap to grid</label>
+        </div>
       </div>
     </div>
   </div>

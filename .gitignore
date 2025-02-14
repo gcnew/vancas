@@ -1,3 +1,5 @@
 built/*
 !built/define.js
 testbed.html
+unused
+.DS_Store
