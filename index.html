@@ -26,9 +26,9 @@
       width: 250px; /* Fixed width for the sidebar */
       background-color: #34495e; /* Sidebar background color */
       color: white;
-      padding: 20px;
+      padding: 10px 15px;
       box-sizing: border-box;
-
+      overflow: hidden;
       display: flex;
       flex-direction: column;
     }
@@ -55,7 +55,6 @@
       display: flex;
       justify-content: left; /* Aligns the icons horizontally in the center */
       gap: 5px;              /* Space between icons */
-      flex: 1;
     }
 
     .simple-icon {
@@ -65,6 +64,112 @@
       border-radius: 2px;
       cursor: pointer;
     }
+
+    .simple-icon:hover {
+      background-color: #cadbff;
+    }
+
+    .simple-icon.selected {
+      /*background-color: #d4ffc1;*/
+      background-color: #cadbff;
+    }
+
+    hr {
+      background-color: #98a0b3;
+      height: 2px;
+      border-width: 0;
+    }
+
+    .objects-list {
+      background-color: #5d7791; /* Sidebar background color */
+    }
+
+    .objects-list .header {
+      margin: 10px;
+    }
+
+    .objects-list .contents {
+      max-height: 25vh;
+      min-height: 100px;
+      overflow-y: scroll;
+      margin: 0px 0px 5px 5px;
+    }
+
+    .object-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-sizing: border-box;
+      padding: 2px 0px 4px 5px;
+    }
+
+    .object-row:hover {
+      background-color: #34495e;
+    }
+
+    .open-closed-indicator {
+      transform: rotate(90deg);
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      transition: transform 0.2s;
+      font-size: 12px;
+    }
+
+    .open-closed-indicator.closed {
+      transform: rotate(0deg);
+    }
+
+    .type.line {
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+      background-image: url(img/line.png);
+      background-color: #F8F8FF;
+      /* background-position: center; */
+      /* background-repeat: no-repeat; */
+      background-size: cover;
+    }
+
+    .object-row .visibility {
+      width: 16px;
+      height: 16px;
+      display: inline-block;
+      background-image: url(img/visible.svg);
+      background-size: cover;
+      margin-left: auto;
+      filter: invert(98%) sepia(61%) saturate(2408%) hue-rotate(180deg) brightness(109%) contrast(109%);
+      margin-right: 5px;
+    }
+
+    .object-row .visibility.hidden {
+      background-image: url(img/invisible.svg);
+    }
+
+    .snap-to-grid-footer {
+      margin-top: auto;
+    }
+
+    ::-webkit-scrollbar {
+      width: 14px;
+    }
+
+    ::-webkit-scrollbar-track {
+      -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      opacity: 0.5;
+      border: 4px solid rgba(0, 0, 0, 0);
+      background-clip: padding-box;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
+      border: 4px solid rgba(0, 0, 0, 0);
+      background-clip: padding-box;
+      border-radius: 9999px;
+      background-color: #555;
+    }
+
   </style>
 </head>
 <body>
@@ -87,6 +192,24 @@
       </div>
 
       <div>
+        <hr/>
+      </div>
+
+      <div class="objects-list">
+        <div class="header">
+          <span class="open-closed-indicator">▶︎</span>
+          <span class="title">Objects</span>
+        </div>
+        <div class="contents">
+          <div>
+            <span class="type"></span>
+            <span class="label"></span>
+            <span class="visibility"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="snap-to-grid-footer">
         <hr/>
         <div>
           <input type="checkbox" id="snapToGrid" name="snapToGrid" checked />

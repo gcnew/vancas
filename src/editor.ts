@@ -2,7 +2,7 @@
 import {
     type VEvent,
 
-    canvas, ctx, isMac,
+    canvas, ctx, isMac, pressedKeys,
 
     width, height, mouseX, mouseY,
 
@@ -16,7 +16,7 @@ import { clamp } from './util'
 
 let KbShortcuts: Shortcut[] = [
     [resetZoom,               isMac ? 'META + 0' : 'CTRL + 0'],
-    [setEscape,               'ESC'],
+    [onEscape,                'ESC'],
     [() => setTool('line'),   'L'],
     [() => setTool('grab'),   'G']
 ];
@@ -27,7 +27,17 @@ type Tool = 'line' | 'pointer' | 'grab'
 let tool: Tool = 'pointer';
 
 type Point = { x: number, y: number }
-type Objects = { kind: 'line', startX: number, startY: number, endX: number, endY: number, zoom: number, width: number }
+
+type Objects = {
+    kind: 'line',
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    zoom: number,
+    width: number,
+    color: string
+}
 
 let objects: Objects[] = [];
 
@@ -53,6 +63,9 @@ const Sidebar = document.getElementById('sidebar')!;
 const SimpleTools = document.querySelector<HTMLElement>('.simple-tools')!;
 const SnapToGrid = document.querySelector<HTMLInputElement>('#snapToGrid')!;
 
+const ObjectsListHeader = document.querySelector<HTMLElement>('.objects-list .header')!;
+const ObjectsListContents = document.querySelector<HTMLElement>('.objects-list .contents')!;
+
 let snapToGrid = true;
 
 export function setup() {
@@ -61,6 +74,7 @@ export function setup() {
     Sidebar.style.display = null!;
     SimpleTools.addEventListener('click', toolSelectionListener);
     SnapToGrid.addEventListener('change', snapToGridChange);
+    ObjectsListHeader.addEventListener('click', showHideObjectsList);
 
     listen('mouseup', onMouseUp);
     listen('mousedown', onMouseDown);
@@ -68,6 +82,8 @@ export function setup() {
     registerShortcuts(KbShortcuts);
     addDebugMsg(dbgZoom);
     addDebugMsg(dbgWorldPos);
+
+    setTool('pointer');
 }
 
 export function tearDown() {
@@ -76,6 +92,7 @@ export function tearDown() {
     Sidebar.style.display = 'none'
     SimpleTools.removeEventListener('click', toolSelectionListener);
     SnapToGrid.removeEventListener('change', snapToGridChange);
+    ObjectsListHeader.removeEventListener('click', showHideObjectsList);
 
     unlisten('mouseup', onMouseUp);
     unlisten('mousedown', onMouseDown);
@@ -100,12 +117,30 @@ function toolSelectionListener(e: MouseEvent) {
 }
 
 function setTool(t: Tool) {
+    // unselect the old tool
+    document.querySelector('.simple-icon.selected')?.classList.remove('selected');
+
+    document.querySelector(`.simple-icon[data="${t}"]`)?.classList.add('selected');
+
     tool = t;
     canvas.style.cursor = ToolCursor[tool];
 }
 
 function snapToGridChange(e: Event) {
     snapToGrid = SnapToGrid.checked;
+}
+
+function showHideObjectsList() {
+    const OpenClosedIndicator = ObjectsListHeader.querySelector('.open-closed-indicator')!;
+    const isOpen = !OpenClosedIndicator.classList.contains('closed');
+
+    if (isOpen) {
+        OpenClosedIndicator.classList.add('closed');
+        ObjectsListContents.style.display = 'none';
+    } else {
+        OpenClosedIndicator.classList.remove('closed');
+        ObjectsListContents.style.display = null!;
+    }
 }
 
 function applySnap(x: Point) {
@@ -147,9 +182,11 @@ function onMouseUp() {
                 endX: end.x - dx,
                 endY: end.y - dy,
                 zoom: gridSize,
-                width: currentWidth
+                width: currentWidth,
+                color: '#34495E'
             });
 
+            updateObjectsList();
             break;
         }
 
@@ -187,13 +224,30 @@ function resetZoom() {
     ty = dy = 0;
 }
 
-function setEscape() {
+function onEscape() {
     // if in operation, revert to the `pointer` tool
     if (startPoint === undefined) {
         setTool('pointer');
     }
 
     startPoint = undefined;
+}
+
+function updateObjectsList() {
+    const html = objects.map(renderObject)
+        .join('');
+
+    ObjectsListContents.innerHTML = html;
+}
+
+function renderObject(x: Objects, idx: number) {
+    return `
+    <div class="object-row">
+        <span class="type ${x.kind}"></span>
+        <span class="label">${x.kind} ${idx}</span>
+        <span class="visibility"></span>
+    </div>
+`;
 }
 
 function dbgZoom() {
@@ -204,9 +258,32 @@ function dbgWorldPos() {
     return `dx:${dx.toFixed(2)} dy:${dy.toFixed(2)}`;
 }
 
+let savedTool: Tool | undefined;
 export function draw() {
     ctx.clearRect(0, 0, width, height);
 
+    if (pressedKeys.META) {
+        if (!savedTool) {
+            savedTool = tool;
+            setTool('grab');
+        }
+    } else {
+        if (savedTool) {
+            setTool(savedTool);
+            savedTool = undefined;
+        }
+    }
+
+    if (tool === 'grab') {
+        applyGrab();
+    }
+
+    drawGrid();
+    drawObjects();
+    drawTool();
+}
+
+function drawGrid() {
     // Set line properties
     ctx.strokeStyle = '#D0E7FF';
     ctx.lineWidth = 1;
@@ -226,13 +303,6 @@ export function draw() {
         ctx.lineTo(width, y);
         ctx.stroke();
     }
-
-    if (tool === 'grab') {
-        applyGrab();
-    }
-
-    drawObjects();
-    drawTool();
 }
 
 function drawObjects() {
@@ -243,7 +313,7 @@ function drawObjects() {
 
                 ctx.beginPath();
                 ctx.lineWidth = o.width * m;
-                ctx.strokeStyle = '#34495E';
+                ctx.strokeStyle = o.color;
                 ctx.moveTo(o.startX * m + dx, o.startY * m + dy);
                 ctx.lineTo(o.endX * m + dx, o.endY * m + dy);
                 ctx.stroke();
