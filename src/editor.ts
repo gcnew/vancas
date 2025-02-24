@@ -17,6 +17,7 @@ import { clamp, uuid } from './util'
 let KbShortcuts: Shortcut[] = [
     [resetZoom,               isMac ? 'META + 0' : 'CTRL + 0'],
     [onEscape,                'ESC'],
+    [onBackspace,             'BACKSPACE'],
     [() => setTool('line'),   'L'],
     [() => setTool('grab'),   'G']
 ];
@@ -42,6 +43,8 @@ type Objects = {
 }
 
 let objects: Objects[] = [];
+let hovered: string | undefined;
+let selected: { [x: string]: true | undefined } = {};
 
 let currentWidth = 2;
 
@@ -77,7 +80,9 @@ export function setup() {
     SimpleTools.addEventListener('click', toolSelectionListener);
     SnapToGrid.addEventListener('change', snapToGridChange);
     ObjectsListHeader.addEventListener('click', showHideObjectsList);
-    ObjectsListContents.addEventListener('click', showHideObject);
+    ObjectsListContents.addEventListener('click', onObjectItemClick);
+    ObjectsListContents.addEventListener('mouseover', onObjectMouseOver);
+    ObjectsListContents.addEventListener('mouseleave', onObjectMouseLeave);
 
     listen('mouseup', onMouseUp);
     listen('mousedown', onMouseDown);
@@ -96,7 +101,10 @@ export function tearDown() {
     SimpleTools.removeEventListener('click', toolSelectionListener);
     SnapToGrid.removeEventListener('change', snapToGridChange);
     ObjectsListHeader.removeEventListener('click', showHideObjectsList);
-    ObjectsListContents.removeEventListener('click', showHideObject);
+    ObjectsListContents.removeEventListener('click', onObjectItemClick);
+    ObjectsListContents.removeEventListener('mouseover', onObjectMouseOver);
+    ObjectsListContents.removeEventListener('mouseleave', onObjectMouseLeave);
+
 
     unlisten('mouseup', onMouseUp);
     unlisten('mousedown', onMouseDown);
@@ -148,13 +156,8 @@ function showHideObjectsList() {
 }
 
 // delegate the event handling to the `contents` parent
-function showHideObject(e: MouseEvent) {
+function onObjectItemClick(e: MouseEvent) {
     const target = e.target as HTMLElement;
-
-    // it is not the correct child; exit
-    if (!target.classList.contains('visibility')) {
-        return;
-    }
 
     const id = target.parentElement?.dataset.id;
     if (!id) {
@@ -162,7 +165,18 @@ function showHideObject(e: MouseEvent) {
         return;
     }
 
+    // it is not the correct child; exit
+    if (target.classList.contains('visibility')) {
+        onObjectVisibilityClick(target, id);
+        return;
+    }
+
+    onObjectSelection(target.parentElement, id);
+}
+
+function onObjectVisibilityClick(target: HTMLElement, id: string) {
     const obj = objects.find(x => x.id === id)!;
+
     if (obj.visible) {
         obj.visible = false;
         target.classList.add('hidden');
@@ -171,6 +185,36 @@ function showHideObject(e: MouseEvent) {
         target.classList.remove('hidden');
     }
 }
+
+function onObjectSelection(el: HTMLElement, id: string) {
+    if (!selected[id]) {
+        el.classList.add('selected');
+        selected[id] = true;
+    } else {
+        el.classList.remove('selected');
+        delete selected[id];
+    }
+}
+
+function onObjectMouseOver(e: MouseEvent) {
+    let target = e.target as HTMLElement | null;
+
+    while (target) {
+        if (target.classList.contains('object-row')) {
+            break;
+        }
+
+        target = target.parentElement;
+    }
+
+    const id = target?.dataset.id;
+    hovered = id || undefined;
+}
+
+function onObjectMouseLeave(e: MouseEvent) {
+    hovered = undefined;
+}
+
 
 function applySnap(x: Point) {
     if (!snapToGrid || !isSnapToGridTool(tool)) {
@@ -264,6 +308,15 @@ function onEscape() {
     startPoint = undefined;
 }
 
+function onBackspace() {
+    const toDelete = Object.keys(selected);
+
+    objects = objects.filter(x => !selected[x.id]);
+    selected = {};
+
+    updateObjectsList();
+}
+
 function updateObjectsList() {
     const html = objects.map(renderObject)
         .join('');
@@ -290,7 +343,7 @@ function dbgWorldPos() {
 }
 
 let savedTool: Tool | undefined;
-export function draw() {
+export function draw(dt: number) {
     ctx.clearRect(0, 0, width, height);
 
     if (pressedKeys.META) {
@@ -310,7 +363,7 @@ export function draw() {
     }
 
     drawGrid();
-    drawObjects();
+    drawObjects(dt);
     drawTool();
 }
 
@@ -336,10 +389,15 @@ function drawGrid() {
     }
 }
 
-function drawObjects() {
+function drawObjects(dt: number) {
     for (const o of objects) {
         if (!o.visible) {
             continue;
+        }
+
+        if (selected[o.id]) {
+            ctx.setLineDash([20, 5]);
+            ctx.lineDashOffset = (Date.now() % 1000) / 20;
         }
 
         switch (o.kind) {
@@ -348,11 +406,17 @@ function drawObjects() {
 
                 ctx.beginPath();
                 ctx.lineWidth = o.width * m;
-                ctx.strokeStyle = o.color;
+                ctx.strokeStyle = hovered === o.id ? '#fb5b5b' : o.color;
                 ctx.moveTo(o.startX * m + dx, o.startY * m + dy);
                 ctx.lineTo(o.endX * m + dx, o.endY * m + dy);
                 ctx.stroke();
             }
+        }
+
+        // reset
+        if (selected[o.id]) {
+            ctx.setLineDash([]);
+            ctx.lineDashOffset = 0;
         }
     }
 }

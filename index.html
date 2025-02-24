@@ -76,12 +76,7 @@
       background-image: url(img/pointer.png);
     }
 
-    .simple-icon:hover {
-      background-color: #cadbff;
-    }
-
-    .simple-icon.selected {
-      /*background-color: #d4ffc1;*/
+    .simple-icon:hover, .simple-icon.selected {
       background-color: #cadbff;
     }
 
@@ -112,10 +107,19 @@
       gap: 6px;
       box-sizing: border-box;
       padding: 2px 0px 4px 5px;
+      cursor: pointer;
     }
 
     .object-row:hover {
-      background-color: #34495e;
+      background-color: #34495e !important;
+    }
+
+    .object-row.selected {
+      background-color: #3c5873;
+    }
+
+    .object-row .label {
+      flex: 1;
     }
 
     .open-closed-indicator {
