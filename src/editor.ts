@@ -110,7 +110,7 @@ export function tearDown() {
 }
 
 function toolSelectionListener(e: MouseEvent) {
-    const tool = (e.target as HTMLElement).attributes.getNamedItem('data')?.value;
+    const tool = (e.target as HTMLElement).dataset.tool;
 
     // if no tool was clicked, just return
     if (!tool) {
@@ -124,7 +124,7 @@ function setTool(t: Tool) {
     // unselect the old tool
     document.querySelector('.simple-icon.selected')?.classList.remove('selected');
 
-    document.querySelector(`.simple-icon[data="${t}"]`)?.classList.add('selected');
+    document.querySelector(`.simple-icon[data-tool="${t}"]`)?.classList.add('selected');
 
     tool = t;
     canvas.style.cursor = ToolCursor[tool];
@@ -276,7 +276,7 @@ function renderObject(x: Objects, idx: number) {
     <div class="object-row" data-id="${x.id}">
         <span class="type ${x.kind}"></span>
         <span class="label">${x.kind} ${idx}</span>
-        <span class="visibility"></span>
+        <span class="visibility ${x.visible ? '' : 'hidden'}"></span>
     </div>
 `;
 }

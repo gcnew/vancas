@@ -61,8 +61,19 @@
       width: 24px; /* Set width for the icon */
       height: 24px; /* Set height for the icon */
       background-color: #F8F8FF;
+      background-size: cover;
       border-radius: 2px;
       cursor: pointer;
+    }
+
+    .simple-icon.line {
+      background-image: url(img/line.png);
+    }
+    .simple-icon.grab {
+      background-image: url(img/grab.png);
+    }
+    .simple-icon.pointer {
+      background-image: url(img/pointer.png);
     }
 
     .simple-icon:hover {
@@ -186,9 +197,9 @@
       </div>
 
       <div class="simple-tools">
-        <img class="simple-icon" src="img/line.png" data="line">
-        <img class="simple-icon" src="img/pointer.png" data="pointer">
-        <img class="simple-icon" src="img/grab.png" data="grab">
+        <span class="simple-icon line" data-tool="line"></span>
+        <span class="simple-icon pointer" data-tool="pointer"></span>
+        <span class="simple-icon grab" data-tool="grab"></span>
       </div>
 
       <div>
