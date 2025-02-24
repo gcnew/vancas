@@ -12,7 +12,7 @@ import {
 import { Shortcut } from './keyboard'
 import { WorldZoom } from './game'
 
-import { clamp } from './util'
+import { clamp, uuid } from './util'
 
 let KbShortcuts: Shortcut[] = [
     [resetZoom,               isMac ? 'META + 0' : 'CTRL + 0'],
@@ -30,13 +30,15 @@ type Point = { x: number, y: number }
 
 type Objects = {
     kind: 'line',
+    id: string,
     startX: number,
     startY: number,
     endX: number,
     endY: number,
     zoom: number,
     width: number,
-    color: string
+    color: string,
+    visible: boolean
 }
 
 let objects: Objects[] = [];
@@ -75,6 +77,7 @@ export function setup() {
     SimpleTools.addEventListener('click', toolSelectionListener);
     SnapToGrid.addEventListener('change', snapToGridChange);
     ObjectsListHeader.addEventListener('click', showHideObjectsList);
+    ObjectsListContents.addEventListener('click', showHideObject);
 
     listen('mouseup', onMouseUp);
     listen('mousedown', onMouseDown);
@@ -93,6 +96,7 @@ export function tearDown() {
     SimpleTools.removeEventListener('click', toolSelectionListener);
     SnapToGrid.removeEventListener('change', snapToGridChange);
     ObjectsListHeader.removeEventListener('click', showHideObjectsList);
+    ObjectsListContents.removeEventListener('click', showHideObject);
 
     unlisten('mouseup', onMouseUp);
     unlisten('mousedown', onMouseDown);
@@ -143,6 +147,31 @@ function showHideObjectsList() {
     }
 }
 
+// delegate the event handling to the `contents` parent
+function showHideObject(e: MouseEvent) {
+    const target = e.target as HTMLElement;
+
+    // it is not the correct child; exit
+    if (!target.classList.contains('visibility')) {
+        return;
+    }
+
+    const id = target.parentElement?.dataset.id;
+    if (!id) {
+        // something went wrong..
+        return;
+    }
+
+    const obj = objects.find(x => x.id === id)!;
+    if (obj.visible) {
+        obj.visible = false;
+        target.classList.add('hidden');
+    } else {
+        obj.visible = true;
+        target.classList.remove('hidden');
+    }
+}
+
 function applySnap(x: Point) {
     if (!snapToGrid || !isSnapToGridTool(tool)) {
         return x;
@@ -177,13 +206,15 @@ function onMouseUp() {
 
             objects.push({
                 kind: 'line',
+                id: uuid(),
                 startX: startPoint.x - dx,
                 startY: startPoint.y - dy,
                 endX: end.x - dx,
                 endY: end.y - dy,
                 zoom: gridSize,
                 width: currentWidth,
-                color: '#34495E'
+                color: '#34495E',
+                visible: true
             });
 
             updateObjectsList();
@@ -242,7 +273,7 @@ function updateObjectsList() {
 
 function renderObject(x: Objects, idx: number) {
     return `
-    <div class="object-row">
+    <div class="object-row" data-id="${x.id}">
         <span class="type ${x.kind}"></span>
         <span class="label">${x.kind} ${idx}</span>
         <span class="visibility"></span>
@@ -307,6 +338,10 @@ function drawGrid() {
 
 function drawObjects() {
     for (const o of objects) {
+        if (!o.visible) {
+            continue;
+        }
+
         switch (o.kind) {
             case 'line': {
                 const m = gridSize / o.zoom;
