@@ -215,7 +215,6 @@ function onObjectMouseLeave(e: MouseEvent) {
     hovered = undefined;
 }
 
-
 function applySnap(x: Point) {
     if (!snapToGrid || !isSnapToGridTool(tool)) {
         return x;
@@ -306,6 +305,10 @@ function onEscape() {
     }
 
     startPoint = undefined;
+    selected = {};
+    hovered = undefined;
+
+    updateObjectsList();
 }
 
 function onBackspace() {
