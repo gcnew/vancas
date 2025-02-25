@@ -52,7 +52,7 @@ let currentWidth = 2;
 let dx = 0;
 let dy = 0;
 
-// translation x, y
+// translation x, y - pivot for dx, dy when the `grab` tool is active
 let tx = 0;
 let ty = 0;
 
@@ -245,31 +245,19 @@ function onMouseUp() {
 
     switch (tool) {
         case 'line': {
-            const end = applySnap({ x: mouseX, y: mouseY });
-
-            objects.push({
-                kind: 'line',
-                id: uuid(),
-                startX: startPoint.x - dx,
-                startY: startPoint.y - dy,
-                endX: end.x - dx,
-                endY: end.y - dy,
-                zoom: gridSize,
-                width: currentWidth,
-                color: '#34495E',
-                visible: true
-            });
-
+            addLine(startPoint);
             updateObjectsList();
+
             break;
         }
 
         case 'grab': {
-            tx = dx;
-            ty = dy;
-
             canvas.style.cursor = 'grab';
+            break;
+        }
 
+        case 'pointer': {
+            selectObjectsInsideArea();
             break;
         }
     }
@@ -277,11 +265,37 @@ function onMouseUp() {
     startPoint = undefined;
 }
 
+function addLine(startPoint: Point) {
+    const end = applySnap({ x: mouseX, y: mouseY });
+
+    const line: Objects = {
+        kind: 'line',
+        id: uuid(),
+        startX: startPoint.x - dx,
+        startY: startPoint.y - dy,
+        endX: end.x - dx,
+        endY: end.y - dy,
+        zoom: gridSize,
+        width: currentWidth,
+        color: '#34495E',
+        visible: true
+    };
+
+    objects.push(line);
+}
+
+function selectObjectsInsideArea() {
+    // todo...
+}
+
 function onMouseDown(e: VEvent) {
     startPoint = applySnap({ x: e.clickX, y: e.clickY });
 
     switch (tool) {
         case 'grab': {
+            tx = dx;
+            ty = dy;
+
             canvas.style.cursor = 'grabbing';
             return;
         }
