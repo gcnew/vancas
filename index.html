@@ -86,19 +86,33 @@
       border-width: 0;
     }
 
-    .objects-list {
+    .foldable {
       background-color: #5d7791; /* Sidebar background color */
+      margin-bottom: 10px;
     }
 
-    .objects-list .header {
+    .foldable .header {
       margin: 10px;
     }
 
-    .objects-list .contents {
+    .foldable .contents {
       max-height: 25vh;
       min-height: 100px;
       overflow-y: scroll;
       margin: 0px 0px 5px 5px;
+    }
+
+    .foldable .open-closed-indicator {
+      transform: rotate(90deg);
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      transition: transform 0.2s;
+      font-size: 12px;
+    }
+
+    .foldable .open-closed-indicator.closed {
+      transform: rotate(0deg);
     }
 
     .object-row {
@@ -120,19 +134,6 @@
 
     .object-row .label {
       flex: 1;
-    }
-
-    .open-closed-indicator {
-      transform: rotate(90deg);
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      transition: transform 0.2s;
-      font-size: 12px;
-    }
-
-    .open-closed-indicator.closed {
-      transform: rotate(0deg);
     }
 
     .type.line {
@@ -159,6 +160,19 @@
 
     .object-row .visibility.hidden {
       background-image: url(img/invisible.svg);
+    }
+
+    .properties-row {
+      display: flex;
+    }
+
+    .properties-row label {
+      flex: 3.5;
+    }
+
+    .properties-row input {
+      flex: 6.5;
+      width: 100%;
     }
 
     .snap-to-grid-footer {
@@ -210,18 +224,20 @@
         <hr/>
       </div>
 
-      <div class="objects-list">
+      <div id="objects-list" class="foldable">
         <div class="header">
           <span class="open-closed-indicator">▶︎</span>
           <span class="title">Objects</span>
         </div>
-        <div class="contents">
-          <div>
-            <span class="type"></span>
-            <span class="label"></span>
-            <span class="visibility"></span>
-          </div>
+        <div class="contents"></div>
+      </div>
+
+      <div id="properties" class="foldable">
+        <div class="header">
+          <span class="open-closed-indicator">▶︎</span>
+          <span class="title">Properties</span>
         </div>
+        <div class="contents"></div>
       </div>
 
       <div class="snap-to-grid-footer">

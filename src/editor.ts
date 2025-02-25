@@ -68,8 +68,10 @@ const Sidebar = document.getElementById('sidebar')!;
 const SimpleTools = document.querySelector<HTMLElement>('.simple-tools')!;
 const SnapToGrid = document.querySelector<HTMLInputElement>('#snapToGrid')!;
 
-const ObjectsListHeader = document.querySelector<HTMLElement>('.objects-list .header')!;
-const ObjectsListContents = document.querySelector<HTMLElement>('.objects-list .contents')!;
+const FoldableHeaders = document.querySelectorAll<HTMLElement>('.foldable .header');
+
+const ObjectsListContents = document.querySelector<HTMLElement>('#objects-list .contents')!;
+const PropertiesContents = document.querySelector<HTMLElement>('#properties .contents')!;
 
 let snapToGrid = true;
 
@@ -79,10 +81,12 @@ export function setup() {
     Sidebar.style.display = null!;
     SimpleTools.addEventListener('click', toolSelectionListener);
     SnapToGrid.addEventListener('change', snapToGridChange);
-    ObjectsListHeader.addEventListener('click', showHideObjectsList);
+
     ObjectsListContents.addEventListener('click', onObjectItemClick);
     ObjectsListContents.addEventListener('mouseover', onObjectMouseOver);
     ObjectsListContents.addEventListener('mouseleave', onObjectMouseLeave);
+
+    FoldableHeaders.forEach(x => x.addEventListener('click', showHideFoldable));
 
     listen('mouseup', onMouseUp);
     listen('mousedown', onMouseDown);
@@ -100,11 +104,12 @@ export function tearDown() {
     Sidebar.style.display = 'none'
     SimpleTools.removeEventListener('click', toolSelectionListener);
     SnapToGrid.removeEventListener('change', snapToGridChange);
-    ObjectsListHeader.removeEventListener('click', showHideObjectsList);
+
     ObjectsListContents.removeEventListener('click', onObjectItemClick);
     ObjectsListContents.removeEventListener('mouseover', onObjectMouseOver);
     ObjectsListContents.removeEventListener('mouseleave', onObjectMouseLeave);
 
+    FoldableHeaders.forEach(x => x.removeEventListener('click', showHideFoldable));
 
     unlisten('mouseup', onMouseUp);
     unlisten('mousedown', onMouseDown);
@@ -142,71 +147,60 @@ function snapToGridChange(e: Event) {
     snapToGrid = SnapToGrid.checked;
 }
 
-function showHideObjectsList() {
-    const OpenClosedIndicator = ObjectsListHeader.querySelector('.open-closed-indicator')!;
-    const isOpen = !OpenClosedIndicator.classList.contains('closed');
+function showHideFoldable(e: Event) {
+    const foldable = (e.target as HTMLElement).closest('.foldable');
 
+    const openClosedIndicator = foldable?.querySelector<HTMLElement>('.open-closed-indicator');
+    const contents = foldable?.querySelector<HTMLElement>('.contents');
+
+    // something didn't work
+    if (!openClosedIndicator || !contents) {
+        return;
+    }
+
+    const isOpen = !openClosedIndicator.classList.contains('closed');
     if (isOpen) {
-        OpenClosedIndicator.classList.add('closed');
-        ObjectsListContents.style.display = 'none';
+        openClosedIndicator.classList.add('closed');
+        contents.style.display = 'none';
     } else {
-        OpenClosedIndicator.classList.remove('closed');
-        ObjectsListContents.style.display = null!;
+        openClosedIndicator.classList.remove('closed');
+        contents.style.display = null!;
     }
 }
 
 // delegate the event handling to the `contents` parent
 function onObjectItemClick(e: MouseEvent) {
     const target = e.target as HTMLElement;
+    const objectRow = target.closest<HTMLElement>('.object-row');
 
-    const id = target.parentElement?.dataset.id;
+    const id = objectRow?.dataset.id;
     if (!id) {
         // something went wrong..
         return;
     }
 
-    // it is not the correct child; exit
-    if (target.classList.contains('visibility')) {
-        onObjectVisibilityClick(target, id);
-        return;
-    }
-
-    onObjectSelection(target.parentElement, id);
-}
-
-function onObjectVisibilityClick(target: HTMLElement, id: string) {
-    const obj = objects.find(x => x.id === id)!;
-
-    if (obj.visible) {
-        obj.visible = false;
-        target.classList.add('hidden');
+    // if the `eye` has been clicked, toggle visibility
+    if (target.matches('.visibility')) {
+        const obj = objects.find(x => x.id === id)!;
+        obj.visible = !obj.visible;
     } else {
-        obj.visible = true;
-        target.classList.remove('hidden');
+        if (!pressedKeys.META) {
+            selected = { [id]: true };
+        } else {
+            // .. or else toggle selection
+            if (selected[id]) {
+                delete selected[id];
+            } else {
+                selected[id] = true;
+            }
+        }
     }
-}
 
-function onObjectSelection(el: HTMLElement, id: string) {
-    if (!selected[id]) {
-        el.classList.add('selected');
-        selected[id] = true;
-    } else {
-        el.classList.remove('selected');
-        delete selected[id];
-    }
+    updateObjectsList();
 }
 
 function onObjectMouseOver(e: MouseEvent) {
-    let target = e.target as HTMLElement | null;
-
-    while (target) {
-        if (target.classList.contains('object-row')) {
-            break;
-        }
-
-        target = target.parentElement;
-    }
-
+    const target = (e.target as HTMLElement).closest<HTMLElement>('.object-row');
     const id = target?.dataset.id;
     hovered = id || undefined;
 }
@@ -335,20 +329,56 @@ function onBackspace() {
 }
 
 function updateObjectsList() {
-    const html = objects.map(renderObject)
+    const objectsListHtml = objects.map(renderObject)
         .join('');
 
-    ObjectsListContents.innerHTML = html;
+    ObjectsListContents.innerHTML = objectsListHtml;
+
+    const selectedIds = Object.keys(selected);
+    const propertiesHtml = selectedIds.length === 1
+        ? renderProperties(objects.find(x => selected[x.id])!)
+        : '';
+
+    PropertiesContents.innerHTML = propertiesHtml;
 }
 
 function renderObject(x: Objects, idx: number) {
     return `
-    <div class="object-row" data-id="${x.id}">
+    <div class="object-row ${selected[x.id] ? 'selected' : ''}" data-id="${x.id}">
         <span class="type ${x.kind}"></span>
         <span class="label">${x.kind} ${idx}</span>
         <span class="visibility ${x.visible ? '' : 'hidden'}"></span>
     </div>
 `;
+}
+
+function renderProperties(x: Objects) {
+    return `
+    <div class="properties-row">
+        <label for="startX">start X:</label>
+        <input id="startX" name="startX" type="number" value="${x.startX}">
+    </div>
+    <div class="properties-row">
+        <label for="startY">start Y:</label>
+        <input id="startY" name="startY" type="number" value="${x.startY}">
+    </div>
+    <div class="properties-row">
+        <label for="endX">end X:</label>
+        <input id="endX" name="endX" type="number" value="${x.endX}">
+    </div>
+    <div class="properties-row">
+        <label for="endY">end Y:</label>
+        <input id="endY" name="endY" type="number" value="${x.endY}">
+    </div>
+    <div class="properties-row">
+        <label for="colour">colour:</label>
+        <input id="colour" name="colour" type="color" value="${x.color}">
+    </div>
+    <div class="properties-row">
+        <label for="width">width:</label>
+        <input id="width" name="width" type="number" value="${x.width}">
+    </div>
+    `;
 }
 
 function dbgZoom() {
