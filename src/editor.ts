@@ -38,14 +38,13 @@ type Objects = {
     startY: number,
     endX: number,
     endY: number,
-    zoom: number,
     width: number,
     color: string,
-    visible: boolean
 }
 
 let objects: Objects[] = [];
 let hovered: string | undefined;
+let hidden: { [x: string]: true | undefined } = {};
 let selected: { [x: string]: true | undefined } = {};
 
 let currentWidth = 2;
@@ -187,8 +186,11 @@ function onObjectItemClick(e: MouseEvent) {
 
     // if the `eye` has been clicked, toggle visibility
     if (target.matches('.visibility')) {
-        const obj = objects.find(x => x.id === id)!;
-        obj.visible = !obj.visible;
+        if (hidden[id]) {
+            delete hidden[id];
+        } else {
+            hidden[id] = true;
+        }
     } else {
         // .. or else toggle selection
         if (selected[id]) {
@@ -286,19 +288,18 @@ function onMouseUp() {
 }
 
 function addLine(startPoint: Point) {
+    const m = WorldZoom / gridSize;
     const end = applySnap({ x: mouseX, y: mouseY });
 
     const line: Objects = {
         kind: 'line',
         id: uuid(),
-        startX: startPoint.x + dx,
-        startY: startPoint.y + dy,
-        endX: end.x + dx,
-        endY: end.y + dy,
-        zoom: gridSize,
+        startX: (startPoint.x + dx) * m,
+        startY: (startPoint.y + dy) * m,
+        endX: (end.x + dx) * m,
+        endY: (end.y + dy) * m,
         width: currentWidth,
-        color: '#34495E',
-        visible: true
+        color: '#34495E'
     };
 
     objects.push(line);
@@ -386,7 +387,7 @@ function renderObject(x: Objects, idx: number) {
     <div class="object-row ${selected[x.id] ? 'selected' : ''}" data-id="${x.id}">
         <span class="type ${x.kind}"></span>
         <span class="label">${x.kind} ${idx}</span>
-        <span class="visibility ${x.visible ? '' : 'hidden'}"></span>
+        <span class="visibility ${hidden[x.id] ? 'hidden' : ''}"></span>
     </div>
 `;
 }
@@ -477,7 +478,7 @@ function drawGrid() {
 
 function drawObjects(dt: number) {
     for (const o of objects) {
-        if (!o.visible) {
+        if (hidden[o.id]) {
             continue;
         }
 
@@ -488,7 +489,7 @@ function drawObjects(dt: number) {
 
         switch (o.kind) {
             case 'line': {
-                const m = gridSize / o.zoom;
+                const m = gridSize / WorldZoom;
 
                 ctx.beginPath();
                 ctx.lineWidth = o.width * m;
@@ -549,9 +550,9 @@ function drawPointer() {
 
         ctx.fillStyle = 'darkred';
         ctx.font = '10px monospace';
-        ctx.fillText(`(${worldRec.startX}, ${worldRec.startY})`, rect.startX, rect.startY + 10);
+        ctx.fillText(`(${worldRec.startX.toFixed(2)}, ${worldRec.startY.toFixed(2)})`, rect.startX, rect.startY + 10);
 
-        const msg = `(${worldRec.endX}, ${worldRec.endY})`;
+        const msg = `(${worldRec.endX.toFixed(2)}, ${worldRec.endY.toFixed(2)})`;
         const dims = ctx.measureText(msg);
         ctx.fillText(msg, rect.endX - dims.width, rect.endY - 5 /* dims.fontBoundingBoxAscent */);
     }
@@ -562,10 +563,11 @@ function drawLine() {
         return;
     }
 
+    const m = gridSize / WorldZoom;
     const end = applySnap({ x: mouseX, y: mouseY });
 
     ctx.beginPath();
-    ctx.lineWidth = currentWidth;
+    ctx.lineWidth = currentWidth * m;
     ctx.strokeStyle = '#34495E';
     ctx.moveTo(startPoint.x, startPoint.y);
     ctx.lineTo(end.x, end.y);
