@@ -233,8 +233,14 @@ function onPropertiesChange(e: Event) {
         target.value = String(oldValue);
     }
 
+    // parse the value to a number if input type is `number`
+    const value = target.type === 'number'
+        ? Number(target.value)
+        : target.value;
+
     // TODO: should use a safer method
-    (selectedObj as any)[target.id] = target.value;
+    target.value = String(value);
+    (selectedObj as any)[target.id] = value;
 }
 
 function applySnap(x: Point) {
