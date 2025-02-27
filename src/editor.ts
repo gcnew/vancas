@@ -28,6 +28,8 @@ type Tool = 'line' | 'pointer' | 'grab'
 let tool: Tool = 'pointer';
 
 type Point = { x: number, y: number }
+type Rect  = { startX: number, startY: number, endX: number, endY: number }
+
 
 type Objects = {
     kind: 'line',
@@ -232,8 +234,8 @@ function applySnap(x: Point) {
         return x;
     }
 
-    const offsetX = (gridSize + dx % gridSize) % gridSize;
-    const offsetY = (gridSize + dy % gridSize) % gridSize;
+    const offsetX = gridSize - dx % gridSize;
+    const offsetY = gridSize - dy % gridSize;
 
     return {
         x: offsetX + Math.round((mouseX - offsetX) / gridSize) * gridSize,
@@ -269,7 +271,7 @@ function onMouseUp() {
         }
 
         case 'pointer': {
-            selectObjectsInsideArea();
+            selectObjectsInsideArea(startPoint);
             break;
         }
     }
@@ -283,10 +285,10 @@ function addLine(startPoint: Point) {
     const line: Objects = {
         kind: 'line',
         id: uuid(),
-        startX: startPoint.x - dx,
-        startY: startPoint.y - dy,
-        endX: end.x - dx,
-        endY: end.y - dy,
+        startX: startPoint.x + dx,
+        startY: startPoint.y + dy,
+        endX: end.x + dx,
+        endY: end.y + dy,
         zoom: gridSize,
         width: currentWidth,
         color: '#34495E',
@@ -296,8 +298,22 @@ function addLine(startPoint: Point) {
     objects.push(line);
 }
 
-function selectObjectsInsideArea() {
-    // todo...
+function selectObjectsInsideArea(startPoint: Point) {
+    const selection = normaliseRect({
+        startX: startPoint.x,
+        startY: startPoint.y,
+        endX: mouseX,
+        endY: mouseY
+    });
+
+    const selectedEntries = objects.filter(x => {
+            const norm = normaliseRect(x);
+            return isInside(selection, norm);
+        })
+        .map(x => [x.id, true as const]);
+
+    selected = Object.fromEntries(selectedEntries);
+    updateObjectsList();
 }
 
 function onMouseDown(e: VEvent) {
@@ -436,7 +452,7 @@ function drawGrid() {
     ctx.lineWidth = 1;
 
     // Draw vertical grid lines
-    for (let x = dx % gridSize; x < width; x += gridSize) {
+    for (let x = -dx % gridSize; x < width; x += gridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, height);
@@ -444,7 +460,7 @@ function drawGrid() {
     }
 
     // Draw horizontal grid lines
-    for (let y = dy % gridSize; y < height; y += gridSize) {
+    for (let y = -dy % gridSize; y < height; y += gridSize) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(width, y);
@@ -470,8 +486,8 @@ function drawObjects(dt: number) {
                 ctx.beginPath();
                 ctx.lineWidth = o.width * m;
                 ctx.strokeStyle = hovered === o.id ? '#fb5b5b' : o.color;
-                ctx.moveTo(o.startX * m + dx, o.startY * m + dy);
-                ctx.lineTo(o.endX * m + dx, o.endY * m + dy);
+                ctx.moveTo(o.startX * m - dx, o.startY * m - dy);
+                ctx.lineTo(o.endX * m - dx, o.endY * m - dy);
                 ctx.stroke();
             }
         }
@@ -524,6 +540,28 @@ function applyGrab() {
         return;
     }
 
-    dx = tx + mouseX - startPoint.x;
-    dy = ty + mouseY - startPoint.y;
+    dx = tx + startPoint.x - mouseX;
+    dy = ty + startPoint.y - mouseY;
+}
+
+function isInside(bigger: Rect, target: Rect) {
+    return bigger.startX <= target.startX
+        && bigger.startY <= target.startY
+        && bigger.endX >= target.endX
+        && bigger.endY >= target.endY;
+}
+
+// A rectangle is defined by its diagonal, however it is assumed that (startX <= endX) and (startY <= endY), i.e.
+// Good diagonal  o         Bad diagonal      o
+//                 \                         /
+//                  o                       o
+//
+// This method normalises "Bad diagonal" to "Good diagonal"
+function normaliseRect(x: Rect): Rect {
+    return {
+        startX: Math.min(x.startX, x.endX),
+        startY: Math.min(x.startY, x.endY),
+        endX: Math.max(x.startX, x.endX),
+        endY: Math.max(x.startY, x.endY)
+    };
 }
