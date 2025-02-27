@@ -12,3 +12,8 @@ export function clamp(x: number, min: number, max: number) {
 export function uuid() {
     return crypto.randomUUID();
 }
+
+export function onlyKey(x: { [k: string]: unknown }) {
+    const keys = Object.keys(x);
+    return keys.length === 1 ? keys[0] : undefined;
+}

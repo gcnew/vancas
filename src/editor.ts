@@ -12,7 +12,7 @@ import {
 import { Shortcut } from './keyboard'
 import { WorldZoom } from './game'
 
-import { clamp, uuid } from './util'
+import { clamp, uuid, onlyKey } from './util'
 
 let KbShortcuts: Shortcut[] = [
     [resetZoom,               isMac ? 'META + 0' : 'CTRL + 0'],
@@ -86,6 +86,8 @@ export function setup() {
     ObjectsListContents.addEventListener('mouseover', onObjectMouseOver);
     ObjectsListContents.addEventListener('mouseleave', onObjectMouseLeave);
 
+    PropertiesContents.addEventListener('change', onPropertiesChange);
+
     FoldableHeaders.forEach(x => x.addEventListener('click', showHideFoldable));
 
     listen('mouseup', onMouseUp);
@@ -108,6 +110,8 @@ export function tearDown() {
     ObjectsListContents.removeEventListener('click', onObjectItemClick);
     ObjectsListContents.removeEventListener('mouseover', onObjectMouseOver);
     ObjectsListContents.removeEventListener('mouseleave', onObjectMouseLeave);
+
+    PropertiesContents.removeEventListener('change', onPropertiesChange);
 
     FoldableHeaders.forEach(x => x.removeEventListener('click', showHideFoldable));
 
@@ -184,12 +188,12 @@ function onObjectItemClick(e: MouseEvent) {
         const obj = objects.find(x => x.id === id)!;
         obj.visible = !obj.visible;
     } else {
-        if (!pressedKeys.META) {
-            selected = { [id]: true };
+        // .. or else toggle selection
+        if (selected[id]) {
+            delete selected[id];
         } else {
-            // .. or else toggle selection
-            if (selected[id]) {
-                delete selected[id];
+            if (!pressedKeys.META) {
+                selected = { [id]: true };
             } else {
                 selected[id] = true;
             }
@@ -207,6 +211,20 @@ function onObjectMouseOver(e: MouseEvent) {
 
 function onObjectMouseLeave(e: MouseEvent) {
     hovered = undefined;
+}
+
+function onPropertiesChange(e: Event) {
+    const target = e.target as HTMLInputElement;
+    const selectedId = onlyKey(selected);
+    const selectedObj = selectedId && objects.find(x => x.id === selectedId);
+
+    // something went wrong
+    if (!selectedObj) {
+        return;
+    }
+
+    // TODO: should use a safer method
+    (selectedObj as any)[target.id] = target.value;
 }
 
 function applySnap(x: Point) {
@@ -320,8 +338,6 @@ function onEscape() {
 }
 
 function onBackspace() {
-    const toDelete = Object.keys(selected);
-
     objects = objects.filter(x => !selected[x.id]);
     selected = {};
 
@@ -334,9 +350,9 @@ function updateObjectsList() {
 
     ObjectsListContents.innerHTML = objectsListHtml;
 
-    const selectedIds = Object.keys(selected);
-    const propertiesHtml = selectedIds.length === 1
-        ? renderProperties(objects.find(x => selected[x.id])!)
+    const selectedId = onlyKey(selected);
+    const propertiesHtml = selectedId
+        ? renderProperties(objects.find(x => x.id === selectedId)!)
         : '';
 
     PropertiesContents.innerHTML = propertiesHtml;
@@ -371,8 +387,8 @@ function renderProperties(x: Objects) {
         <input id="endY" name="endY" type="number" value="${x.endY}">
     </div>
     <div class="properties-row">
-        <label for="colour">colour:</label>
-        <input id="colour" name="colour" type="color" value="${x.color}">
+        <label for="color">colour:</label>
+        <input id="color" name="color" type="color" value="${x.color}">
     </div>
     <div class="properties-row">
         <label for="width">width:</label>
