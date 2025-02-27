@@ -95,14 +95,21 @@ export function setup() {
     });
 
     canvas.addEventListener('mousedown', e => {
+        if (e.button !== 0) {
+            return;
+        }
+
         clickX = e.offsetX;
         clickY = e.offsetY;
-
         raise({ kind: 'mousedown', clickX: clickX!, clickY: clickY! });
     });
 
     // listen on the window for mouse-up, otherwise the event is not received if clicked outside of the window or canvas
     window.addEventListener('mouseup', e => {
+        if (e.button !== 0) {
+            return;
+        }
+
         raise({ kind: 'mouseup', clickX: clickX!, clickY: clickY! });
 
         clickX = undefined;
