@@ -2,7 +2,7 @@
 import {
     type VEvent,
 
-    canvas, ctx, isMac, pressedKeys,
+    canvas, ctx, isMac, pressedKeys, debug,
 
     width, height, mouseX, mouseY,
 
@@ -225,6 +225,12 @@ function onPropertiesChange(e: Event) {
         return;
     }
 
+    if (target.value === '' && target.type !== 'text') {
+        // this is not a valid value; ignore it and reset to the old value
+        const oldValue = selectedObj[target.id as keyof typeof selectedObj];
+        target.value = String(oldValue);
+    }
+
     // TODO: should use a safer method
     (selectedObj as any)[target.id] = target.value;
 }
@@ -299,16 +305,17 @@ function addLine(startPoint: Point) {
 }
 
 function selectObjectsInsideArea(startPoint: Point) {
-    const selection = normaliseRect({
-        startX: startPoint.x,
-        startY: startPoint.y,
-        endX: mouseX,
-        endY: mouseY
+    const m = WorldZoom / gridSize;
+    const area = normaliseRect({
+        startX: (startPoint.x + dx) * m,
+        startY: (startPoint.y + dy) * m,
+        endX: (mouseX + dx) * m,
+        endY: (mouseY + dy) * m
     });
 
     const selectedEntries = objects.filter(x => {
             const norm = normaliseRect(x);
-            return isInside(selection, norm);
+            return isInside(area, norm);
         })
         .map(x => [x.id, true as const]);
 
@@ -513,10 +520,41 @@ function drawPointer() {
         return;
     }
 
+    const rect = normaliseRect({
+        startX: startPoint.x,
+        startY: startPoint.y,
+        endX: mouseX,
+        endY: mouseY
+    });
+
     ctx.beginPath();
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#34495E';
-    ctx.strokeRect(startPoint.x, startPoint.y, mouseX - startPoint.x, mouseY - startPoint.y);
+    ctx.strokeRect(rect.startX, rect.startY, rect.endX - rect.startX, rect.endY - rect.startY);
+
+    if (debug) {
+        const m = WorldZoom / gridSize;
+        const worldRec = normaliseRect({
+            startX: (rect.startX + dx) * m,
+            startY: (rect.startY + dy) * m,
+            endX: (rect.endX + dx) * m,
+            endY: (rect.endY + dy) * m
+        });
+
+        ctx.beginPath();
+        ctx.fillStyle = 'darkred';
+        ctx.arc(rect.startX, rect.startY, 3, 0, 2 * Math.PI);
+        ctx.arc(rect.endX, rect.endY, 3, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.fillStyle = 'darkred';
+        ctx.font = '10px monospace';
+        ctx.fillText(`(${worldRec.startX}, ${worldRec.startY})`, rect.startX, rect.startY + 10);
+
+        const msg = `(${worldRec.endX}, ${worldRec.endY})`;
+        const dims = ctx.measureText(msg);
+        ctx.fillText(msg, rect.endX - dims.width, rect.endY - 5 /* dims.fontBoundingBoxAscent */);
+    }
 }
 
 function drawLine() {
