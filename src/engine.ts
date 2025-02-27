@@ -66,6 +66,16 @@ export function setup() {
             return;
         }
 
+        // do nothing if the originating element is input unless the pressed key is ESC
+        // in case of ESC, the element should lose focus
+        if ((e.target as HTMLElement).tagName === 'INPUT') {
+            if (KeyMap[e.code as keyof typeof KeyMap] === 'ESC') {
+                (e.target as HTMLElement).blur();
+            }
+
+            return;
+        }
+
         const sigil = [
                 e.metaKey  && 'META',
                 e.ctrlKey  && 'CTRL',
@@ -242,9 +252,6 @@ function drawDebug() {
         .filter(isTruthy);
 
     for (let i = 0; i < msg.length; ++i) {
-        // const dims = ctx.measureText(msg);
-        // ctx.fillText(msg, width - 10 - dims.width, height - dims.fontBoundingBoxAscent);
-
         ctx.fillText(msg[i], width - 130, (i + 1) * 10);
     }
 }
