@@ -1,0 +1,22 @@
+{
+    "name": "vancas",
+    "version": "0.1.0",
+    "license": "MIT",
+
+    "description": "A basic `canvas` game and a corresponding editor.",
+
+    "keywords": [ "canvas", "game", "editor", "typescript" ],
+
+    "author": {
+        "name": "gcnew"
+    },
+
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/gcnew/vancas.git"
+    },
+
+    "scripts": {
+        "gh-pages": "git checkout -b gh-pages || git checkout gh-pages && git checkout master -- . && tsc && rm -rf src .gitignore tsconfig.json package.json README.md && echo '.DS_Store' > .gitignore && git add -u && git add -- built img && (git commit -m 'Regenerate gh-pages' || true) && git checkout master"
+    }
+}
