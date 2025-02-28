@@ -14,8 +14,10 @@ import { WorldZoom } from './game'
 
 import { clamp, uuid, onlyKey } from './util'
 
+const META_KEY = isMac ? 'META' : 'CTRL';
+
 let KbShortcuts: Shortcut[] = [
-    [resetZoom,               isMac ? 'META + 0' : 'CTRL + 0'],
+    [resetZoom,                `${META_KEY} + 0`],
     [onEscape,                'ESC'],
     [onBackspace,             'BACKSPACE'],
     [() => setTool('line'),   'L'],
@@ -196,7 +198,7 @@ function onObjectItemClick(e: MouseEvent) {
         if (selected[id]) {
             delete selected[id];
         } else {
-            if (!pressedKeys.META) {
+            if (!pressedKeys[META_KEY]) {
                 selected = { [id]: true };
             } else {
                 selected[id] = true;
@@ -439,7 +441,7 @@ let savedTool: Tool | undefined;
 export function draw(dt: number) {
     ctx.clearRect(0, 0, width, height);
 
-    if (pressedKeys.META) {
+    if (pressedKeys[META_KEY]) {
         if (!savedTool) {
             savedTool = tool;
             setTool('grab');
